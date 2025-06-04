@@ -5,21 +5,20 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage
 import datetime
 import os
-from dotenv import load_dotenv
 import base64
 from PIL import Image
 import io
 import uuid
 
-# Load environment variables
-load_dotenv()
+# Email configuration from Streamlit secrets
+def get_email_config():
+    EMAIL_USER = st.secrets["EMAIL_USER"] if "EMAIL_USER" in st.secrets else None
+    EMAIL_PASSWORD = st.secrets["EMAIL_PASSWORD"] if "EMAIL_PASSWORD" in st.secrets else None
+    RECIPIENT_EMAIL = st.secrets["RECIPIENT_EMAIL"] if "RECIPIENT_EMAIL" in st.secrets else "default_recipient@example.com"
+    return EMAIL_USER, EMAIL_PASSWORD, RECIPIENT_EMAIL
 
-# Email configuration
 SMTP_SERVER = "smtp.2925.com"
 SMTP_PORT = 25
-EMAIL_USER = os.getenv("EMAIL_USER")
-EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
-RECIPIENT_EMAIL = os.getenv("RECIPIENT_EMAIL", "default_recipient@example.com")
 
 # Club categories
 CLUB_CATEGORIES = [
@@ -92,6 +91,7 @@ EXAMPLE_CLUB = {
 
 def send_email(subject, body, image_data=None):
     """Send email with the collected information and optional image"""
+    EMAIL_USER, EMAIL_PASSWORD, RECIPIENT_EMAIL = get_email_config()
     try:
         msg = MIMEMultipart()
         msg['From'] = EMAIL_USER
@@ -480,6 +480,7 @@ def main():
                         bg_file = filtered_update["background_image"]
                         if bg_file is not None:
                             image_data = bg_file.getvalue()
+                    EMAIL_USER, EMAIL_PASSWORD, RECIPIENT_EMAIL = get_email_config()
                     if EMAIL_USER and EMAIL_PASSWORD:
                         with st.spinner("Sending update email..."):
                             success, message = send_email(email_subject, email_body, image_data)
@@ -488,7 +489,7 @@ def main():
                             else:
                                 st.error(message)
                     else:
-                        st.warning("Email credentials not found. Please set EMAIL_USER and EMAIL_PASSWORD environment variables.")
+                        st.warning("Email credentials not found. Please set EMAIL_USER and EMAIL_PASSWORD in Streamlit secrets.")
                         st.info("Preview of the update email content:")
                         st.code(email_body)
                         if image_data is not None:
@@ -822,6 +823,7 @@ def main():
                         # Display the image in the app
                         st.image(image_bytes, caption="Uploaded Background Image", use_column_width=True)
                     
+                    EMAIL_USER, EMAIL_PASSWORD, RECIPIENT_EMAIL = get_email_config()
                     if EMAIL_USER and EMAIL_PASSWORD:
                         with st.spinner("Sending email..."):
                             success, message = send_email(email_subject, email_body, image_data)
@@ -830,7 +832,7 @@ def main():
                             else:
                                 st.error(message)
                     else:
-                        st.warning("Email credentials not found. Please set EMAIL_USER and EMAIL_PASSWORD environment variables.")
+                        st.warning("Email credentials not found. Please set EMAIL_USER and EMAIL_PASSWORD in Streamlit secrets.")
                         st.info("Preview of the email content:")
                         st.code(email_body)
                         
